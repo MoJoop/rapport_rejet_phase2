@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>EHCVM3 — Rapports de rejets</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--p:#1f6feb;--d:#1e293b;--g:#64748b;--bd:#e2e8f0;--bg:#f8fafc;--h:#dc2626;--m:#ea580c;--l:#ca8a04}
+*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;color:var(--d);background:#fff}
+header{background:linear-gradient(90deg,#0b3a82,#1f6feb);color:#fff;padding:14px 22px}
+header h1{margin:0;font-size:18px}header .sub{font-size:12px;opacity:.85}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 22px}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+select,input{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-size:14px}
+input.search{flex:1;min-width:200px}
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.kpi{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;font-size:13px}
+.kpi b{font-size:18px;display:block}
+.crumb{font-size:13px;color:var(--g);margin:10px 0}
+.crumb a{color:var(--p);cursor:pointer;text-decoration:none}.crumb a:hover{text-decoration:underline}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:8px}
+.card{border:1px solid var(--bd);border-radius:10px;padding:11px 13px;cursor:pointer;transition:.12s;background:#fff}
+.card:hover{border-color:var(--p);box-shadow:0 2px 8px rgba(31,111,235,.12)}
+.card .t{font-weight:600}.card .s{font-size:12px;color:var(--g);margin-top:3px}
+.card.file{cursor:default}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;margin-right:4px;color:#fff}
+.ph{background:var(--h)}.pm{background:var(--m)}.pl{background:var(--l)}
+.btn{background:var(--p);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.ghost{background:#fff;color:var(--p);border:1px solid var(--p)}
+.dl{font-size:12px}.muted{color:var(--g);font-size:13px}
+footer{color:var(--g);font-size:12px;text-align:center;padding:18px}
+.zipbar{margin:8px 0;display:flex;gap:8px;align-items:center}
+</style>
+</head>
+<body>
+<header><h1>EHCVM3 — Rapports de rejets</h1><div class="sub">ANSD · Contrôle qualité ménage (GT-CQ + complément)</div></header>
+<div class="wrap">
+  <div class="bar">
+    <label class="muted">Snapshot :</label>
+    <select id="snap"></select>
+    <input class="search" id="q" placeholder="🔎 Rechercher un ménage (interview_key ou chef de ménage)…"/>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="zipbar" id="zipbar"></div>
+  <div class="crumb" id="crumb"></div>
+  <div class="list" id="list"></div>
+</div>
+<footer id="foot"></footer>
+<script>
+let MENAGES=[], PATH=[], DATE="";
+const $=id=>document.getElementById(id);
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function fmtPhone(t){t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;}
+
+async function init(){
+  const m=await (await fetch("manifest.json?_="+Date.now())).json();
+  $("foot").textContent="Plateforme générée le "+m.generated+" · "+m.snapshots.length+" snapshot(s)";
+  const sel=$("snap");
+  m.snapshots.forEach(s=>{const o=document.createElement("option");o.value=s.date;o.textContent=s.date+"  ("+s.n_menages+" ménages, "+s.n_rejets+" rejets)";sel.appendChild(o);});
+  sel.onchange=()=>loadSnap(sel.value);
+  $("q").oninput=render;
+  if(m.snapshots.length) loadSnap(m.snapshots[0].date);
+}
+async function loadSnap(date){
+  DATE=date;PATH=[];
+  const d=await (await fetch(`rapports/${date}/_index.json?_=`+Date.now())).json();
+  MENAGES=d.menages;
+  let h=0,mm=0,l=0;MENAGES.forEach(x=>{h+=x.n_h;mm+=x.n_m;l+=x.n_l;});
+  $("kpis").innerHTML=`<div class="kpi"><b>${MENAGES.length}</b>ménages</div>
+    <div class="kpi"><b>${d.n_rejets}</b>rejets</div>
+    <div class="kpi"><b style="color:var(--h)">${h}</b>haute</div>
+    <div class="kpi"><b style="color:var(--m)">${mm}</b>moyenne</div>
+    <div class="kpi"><b style="color:var(--l)">${l}</b>faible</div>`;
+  render();
+}
+function scope(){ // ménages filtrés par le chemin courant
+  return MENAGES.filter(x=>(PATH.length<1||x.team===PATH[0])&&(PATH.length<2||x.enqueteur===PATH[1])&&(PATH.length<3||x.dr===PATH[2]));
+}
+function render(){
+  const q=$("q").value.trim().toLowerCase();
+  let rows=scope();
+  if(q) rows=rows.filter(x=>x.interview_key.toLowerCase().includes(q)||(x.cm||"").toLowerCase().includes(q));
+  // breadcrumb
+  const labels=["Équipes","Enquêteurs","DR","Ménages"];
+  let cb=`<a onclick="go(0)">🏠 ${DATE}</a>`;
+  PATH.forEach((p,i)=>cb+=` › <a onclick="go(${i+1})">${esc(p)}</a>`);
+  $("crumb").innerHTML=cb+`  <span class="muted">— ${rows.length} élément(s)</span>`;
+  // zip bar
+  $("zipbar").innerHTML=`<button class="btn ghost" onclick="zipScope()">⬇ Télécharger ce dossier (.zip)</button>
+    <span class="muted">${q?'résultats de recherche':(labels[PATH.length]||'')}</span>`;
+  const L=$("list");L.innerHTML="";
+  if(q||PATH.length>=3){ // niveau ménage : fichiers
+    rows.forEach(x=>{
+      const c=document.createElement("div");c.className="card file";
+      c.innerHTML=`<div class="t">📄 ${esc(x.interview_key)}</div>
+        <div class="s">${esc(x.cm)} · ☎ ${fmtPhone(x.tel)}</div>
+        <div class="s" style="margin:5px 0"><span class="pill ph">${x.n_h} H</span><span class="pill pm">${x.n_m} M</span><span class="pill pl">${x.n_l} L</span></div>
+        <a class="btn dl" href="rapports/${DATE}/${encodeURI(x.path)}" download>⬇ Télécharger</a>`;
+      L.appendChild(c);
+    });
+    return;
+  }
+  // niveaux dossiers : agréger
+  const key=["team","enqueteur","dr"][PATH.length];
+  const groups={};
+  rows.forEach(x=>{const k=x[key];(groups[k]=groups[k]||{n:0,r:0}); groups[k].n++; groups[k].r+=x.n_total;});
+  Object.keys(groups).sort().forEach(k=>{
+    const g=groups[k],c=document.createElement("div");c.className="card";
+    c.onclick=()=>{PATH.push(k);$("q").value="";render();};
+    const ic=["👥","👤","📍"][PATH.length];
+    c.innerHTML=`<div class="t">${ic} ${esc(k)}</div><div class="s">${g.n} ménages · ${g.r} rejets</div>`;
+    L.appendChild(c);
+  });
+}
+function go(n){PATH=PATH.slice(0,n);$("q").value="";render();}
+async function zipScope(){
+  const q=$("q").value.trim().toLowerCase();
+  let rows=scope();
+  if(q) rows=rows.filter(x=>x.interview_key.toLowerCase().includes(q)||(x.cm||"").toLowerCase().includes(q));
+  if(!rows.length){alert("Aucun fichier à télécharger.");return;}
+  if(rows.length>250 && !confirm(rows.length+" fichiers — le zip peut être volumineux. Continuer ?"))return;
+  const zip=new JSZip();
+  for(const x of rows){
+    try{const b=await (await fetch(`rapports/${DATE}/${encodeURI(x.path)}`)).blob();zip.file(x.path,b);}catch(e){}
+  }
+  const blob=await zip.generateAsync({type:"blob"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=`rapports_${DATE}_${PATH.join("_")||"tous"}.zip`;a.click();
+}
+init();
+</script>
+</body>
+</html>
