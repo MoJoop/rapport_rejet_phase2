@@ -5,129 +5,231 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="robots" content="noindex"/>
 <title>EHCVM3 — Rapports de rejets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://unpkg.com/docx-preview@0.3.3/dist/docx-preview.min.js"></script>
 <style>
-:root{--p:#1f6feb;--d:#1e293b;--g:#64748b;--bd:#e2e8f0;--bg:#f8fafc;--h:#dc2626;--m:#ea580c;--l:#ca8a04}
-*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Roboto,Arial,sans-serif;color:var(--d);background:#fff}
-header{background:linear-gradient(90deg,#0b3a82,#1f6feb);color:#fff;padding:14px 22px}
-header h1{margin:0;font-size:18px}header .sub{font-size:12px;opacity:.85}
-.wrap{max-width:1100px;margin:0 auto;padding:16px 22px}
-.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
-select,input{padding:7px 10px;border:1px solid var(--bd);border-radius:8px;font-size:14px}
-input.search{flex:1;min-width:200px}
-.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
-.kpi{background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;font-size:13px}
-.kpi b{font-size:18px;display:block}
-.crumb{font-size:13px;color:var(--g);margin:10px 0}
-.crumb a{color:var(--p);cursor:pointer;text-decoration:none}.crumb a:hover{text-decoration:underline}
-.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:8px}
-.card{border:1px solid var(--bd);border-radius:10px;padding:11px 13px;cursor:pointer;transition:.12s;background:#fff}
-.card:hover{border-color:var(--p);box-shadow:0 2px 8px rgba(31,111,235,.12)}
-.card .t{font-weight:600}.card .s{font-size:12px;color:var(--g);margin-top:3px}
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --ink:#1f2937; --muted:#6b7280; --faint:#9ca3af;
+  --line:#e8eaed; --accent:#4f46e5; --accent-2:#6366f1; --accent-soft:#eef2ff;
+  --h:#e8553b; --m:#e0962a; --l:#3a9d7a; --radius:14px;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Inter,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+a{color:inherit}
+/* Header */
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line)}
+.hwrap{max-width:1160px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:14px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;letter-spacing:.5px;box-shadow:var(--shadow)}
+.brand h1{margin:0;font-size:16px;font-weight:700;letter-spacing:-.2px}
+.brand p{margin:0;font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+.snap{display:flex;align-items:center;gap:8px}
+.snap label{font-size:12px;color:var(--muted)}
+select,input{font-family:inherit;font-size:14px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:9px 12px;outline:none;transition:.15s}
+select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+/* Layout */
+.wrap{max-width:1160px;margin:0 auto;padding:22px 24px 60px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
+.kpi .n{font-size:24px;font-weight:700;letter-spacing:-.5px}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.kpi.accent .n{color:var(--accent)}
+.search{position:relative;margin:6px 0 16px}
+.search input{width:100%;padding-left:40px}
+.search svg{position:absolute;left:13px;top:11px;color:var(--faint)}
+.crumb{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 14px;font-size:13px}
+.crumb .c{padding:5px 11px;border-radius:999px;background:var(--surface);border:1px solid var(--line);cursor:pointer;transition:.15s;color:var(--muted)}
+.crumb .c:hover{border-color:var(--accent);color:var(--accent)}
+.crumb .c.home{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.crumb .sep{color:var(--faint)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.toolbar .hint{font-size:12px;color:var(--muted)}
+/* Cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;
+  box-shadow:var(--shadow);transition:.16s;cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.card:hover{transform:translateY(-2px);border-color:#d6d9ff;box-shadow:0 6px 22px rgba(79,70,229,.12)}
+.card .ic{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);
+  display:grid;place-items:center;font-size:16px}
+.card .t{font-weight:600;font-size:15px}
+.card .s{font-size:12.5px;color:var(--muted)}
 .card.file{cursor:default}
-.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;margin-right:4px;color:#fff}
-.ph{background:var(--h)}.pm{background:var(--m)}.pl{background:var(--l)}
-.btn{background:var(--p);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
-.btn.ghost{background:#fff;color:var(--p);border:1px solid var(--p)}
-.dl{font-size:12px}.muted{color:var(--g);font-size:13px}
-footer{color:var(--g);font-size:12px;text-align:center;padding:18px}
-.zipbar{margin:8px 0;display:flex;gap:8px;align-items:center}
+.sev{display:flex;gap:6px;margin-top:2px}
+.sev span{font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px}
+.sev .ph{background:#fdecea;color:var(--h)} .sev .pm{background:#fcf2e2;color:var(--m)} .sev .pl{background:#e9f6f1;color:var(--l)}
+.acts{display:flex;gap:8px;margin-top:6px}
+.btn{font-family:inherit;font-size:13px;font-weight:500;border-radius:10px;padding:8px 13px;cursor:pointer;
+  border:1px solid var(--accent);background:var(--accent);color:#fff;text-decoration:none;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--accent-2)}
+.btn.ghost{background:var(--surface);color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.empty{color:var(--muted);text-align:center;padding:40px;font-size:14px}
+/* Modal preview */
+.modal{position:fixed;inset:0;z-index:50;background:rgba(17,24,39,.45);backdrop-filter:blur(3px);
+  display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
+.modal.show{display:flex}
+.box{background:var(--surface);border-radius:16px;width:min(900px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;margin:auto}
+.box .head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface)}
+.box .head .t{font-weight:600}.box .head .sub{font-size:12px;color:var(--muted)}
+.docx-host{padding:22px;background:#eef0f3;max-height:72vh;overflow:auto}
+.docx-host .docx-wrapper{background:transparent;padding:0}
+.docx-host .docx{box-shadow:var(--shadow);margin:0 auto}
+.loading{display:flex;flex-direction:column;align-items:center;gap:12px;padding:50px;color:var(--muted)}
+.spin{width:30px;height:30px;border:3px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}.hwrap{flex-wrap:wrap}}
 </style>
 </head>
 <body>
-<header><h1>EHCVM3 — Rapports de rejets</h1><div class="sub">ANSD · Contrôle qualité ménage (GT-CQ + complément)</div></header>
-<div class="wrap">
-  <div class="bar">
-    <label class="muted">Snapshot :</label>
-    <select id="snap"></select>
-    <input class="search" id="q" placeholder="🔎 Rechercher un ménage (interview_key ou chef de ménage)…"/>
+<header>
+  <div class="hwrap">
+    <div class="logo">CQ</div>
+    <div class="brand"><h1>Rapports de rejets — EHCVM3</h1><p>ANSD · Contrôle qualité ménage</p></div>
+    <div class="spacer"></div>
+    <div class="snap"><label>Snapshot</label><select id="snap"></select></div>
   </div>
+</header>
+<div class="wrap">
   <div class="kpis" id="kpis"></div>
-  <div class="zipbar" id="zipbar"></div>
+  <div class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input id="q" placeholder="Rechercher un ménage (interview_key ou chef de ménage)…"/>
+  </div>
   <div class="crumb" id="crumb"></div>
-  <div class="list" id="list"></div>
+  <div class="toolbar">
+    <div class="hint" id="hint"></div>
+    <button class="btn ghost sm" id="zipbtn" onclick="zipScope()">⬇ Télécharger ce dossier (.zip)</button>
+  </div>
+  <div class="grid" id="list"></div>
 </div>
 <footer id="foot"></footer>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="box">
+    <div class="head">
+      <div style="flex:1"><div class="t" id="mtitle"></div><div class="sub" id="msub"></div></div>
+      <a class="btn sm" id="mdl" download>⬇ Télécharger</a>
+      <button class="btn ghost sm" onclick="closeModal()">✕ Fermer</button>
+    </div>
+    <div class="docx-host" id="docx"></div>
+  </div>
+</div>
+
 <script>
 let MENAGES=[], PATH=[], DATE="";
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-function fmtPhone(t){t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;}
+const fmtPhone=t=>{t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;};
 
 async function init(){
   const m=await (await fetch("manifest.json?_="+Date.now())).json();
-  $("foot").textContent="Plateforme générée le "+m.generated+" · "+m.snapshots.length+" snapshot(s)";
+  $("foot").textContent="Plateforme générée le "+m.generated+" · "+m.snapshots.length+" snapshot(s) · données EHCVM3";
   const sel=$("snap");
-  m.snapshots.forEach(s=>{const o=document.createElement("option");o.value=s.date;o.textContent=s.date+"  ("+s.n_menages+" ménages, "+s.n_rejets+" rejets)";sel.appendChild(o);});
+  m.snapshots.forEach(s=>{const o=document.createElement("option");o.value=s.date;o.textContent=s.date;sel.appendChild(o);});
   sel.onchange=()=>loadSnap(sel.value);
   $("q").oninput=render;
   if(m.snapshots.length) loadSnap(m.snapshots[0].date);
+  else $("list").innerHTML='<div class="empty">Aucun snapshot disponible.</div>';
 }
 async function loadSnap(date){
-  DATE=date;PATH=[];
+  DATE=date;PATH=[];$("q").value="";
   const d=await (await fetch(`rapports/${date}/_index.json?_=`+Date.now())).json();
   MENAGES=d.menages;
   let h=0,mm=0,l=0;MENAGES.forEach(x=>{h+=x.n_h;mm+=x.n_m;l+=x.n_l;});
-  $("kpis").innerHTML=`<div class="kpi"><b>${MENAGES.length}</b>ménages</div>
-    <div class="kpi"><b>${d.n_rejets}</b>rejets</div>
-    <div class="kpi"><b style="color:var(--h)">${h}</b>haute</div>
-    <div class="kpi"><b style="color:var(--m)">${mm}</b>moyenne</div>
-    <div class="kpi"><b style="color:var(--l)">${l}</b>faible</div>`;
+  const eq=new Set(MENAGES.map(x=>x.team)).size;
+  $("kpis").innerHTML=`
+    <div class="kpi accent"><div class="n">${MENAGES.length}</div><div class="lbl">Ménages</div></div>
+    <div class="kpi"><div class="n">${eq}</div><div class="lbl">Équipes</div></div>
+    <div class="kpi"><div class="n" style="color:var(--h)">${h}</div><div class="lbl">Sévérité haute</div></div>
+    <div class="kpi"><div class="n" style="color:var(--m)">${mm}</div><div class="lbl">Moyenne</div></div>
+    <div class="kpi"><div class="n" style="color:var(--l)">${l}</div><div class="lbl">Faible</div></div>`;
   render();
 }
-function scope(){ // ménages filtrés par le chemin courant
+function scope(){
   return MENAGES.filter(x=>(PATH.length<1||x.team===PATH[0])&&(PATH.length<2||x.enqueteur===PATH[1])&&(PATH.length<3||x.dr===PATH[2]));
 }
 function render(){
   const q=$("q").value.trim().toLowerCase();
   let rows=scope();
   if(q) rows=rows.filter(x=>x.interview_key.toLowerCase().includes(q)||(x.cm||"").toLowerCase().includes(q));
-  // breadcrumb
-  const labels=["Équipes","Enquêteurs","DR","Ménages"];
-  let cb=`<a onclick="go(0)">🏠 ${DATE}</a>`;
-  PATH.forEach((p,i)=>cb+=` › <a onclick="go(${i+1})">${esc(p)}</a>`);
-  $("crumb").innerHTML=cb+`  <span class="muted">— ${rows.length} élément(s)</span>`;
-  // zip bar
-  $("zipbar").innerHTML=`<button class="btn ghost" onclick="zipScope()">⬇ Télécharger ce dossier (.zip)</button>
-    <span class="muted">${q?'résultats de recherche':(labels[PATH.length]||'')}</span>`;
+  const levels=["Équipes","Enquêteurs","DR","Ménages"];
+  let cb=`<span class="c home" onclick="go(0)">🏠 ${DATE}</span>`;
+  PATH.forEach((p,i)=>cb+=`<span class="sep">›</span><span class="c" onclick="go(${i+1})">${esc(p)}</span>`);
+  $("crumb").innerHTML=cb;
+  $("hint").textContent=(q?"Résultats de recherche":(levels[PATH.length]||""))+` — ${rows.length} élément(s)`;
+  const showFiles=q||PATH.length>=3;
+  $("zipbtn").style.display=rows.length?"inline-flex":"none";
   const L=$("list");L.innerHTML="";
-  if(q||PATH.length>=3){ // niveau ménage : fichiers
+  if(!rows.length){L.innerHTML='<div class="empty">Aucun élément.</div>';return;}
+  if(showFiles){
     rows.forEach(x=>{
       const c=document.createElement("div");c.className="card file";
-      c.innerHTML=`<div class="t">📄 ${esc(x.interview_key)}</div>
-        <div class="s">${esc(x.cm)} · ☎ ${fmtPhone(x.tel)}</div>
-        <div class="s" style="margin:5px 0"><span class="pill ph">${x.n_h} H</span><span class="pill pm">${x.n_m} M</span><span class="pill pl">${x.n_l} L</span></div>
-        <a class="btn dl" href="rapports/${DATE}/${encodeURI(x.path)}" download>⬇ Télécharger</a>`;
+      c.innerHTML=`<div class="t">${esc(x.cm)||"(sans nom)"}</div>
+        <div class="s" style="font-family:ui-monospace,monospace">${esc(x.interview_key)} · ☎ ${fmtPhone(x.tel)}</div>
+        <div class="sev"><span class="ph">${x.n_h} H</span><span class="pm">${x.n_m} M</span><span class="pl">${x.n_l} L</span></div>
+        <div class="acts">
+          <button class="btn ghost sm" onclick='preview(${JSON.stringify(x.path)},${JSON.stringify(x.interview_key)},${JSON.stringify(x.cm||"")})'>👁 Aperçu</button>
+          <a class="btn sm" href="rapports/${DATE}/${encodeURI(x.path)}" download>⬇ Télécharger</a>
+        </div>`;
       L.appendChild(c);
     });
     return;
   }
-  // niveaux dossiers : agréger
   const key=["team","enqueteur","dr"][PATH.length];
+  const ic=["👥","👤","📍"][PATH.length];
   const groups={};
-  rows.forEach(x=>{const k=x[key];(groups[k]=groups[k]||{n:0,r:0}); groups[k].n++; groups[k].r+=x.n_total;});
+  rows.forEach(x=>{const k=x[key];(groups[k]=groups[k]||{n:0,r:0});groups[k].n++;groups[k].r+=x.n_total;});
   Object.keys(groups).sort().forEach(k=>{
     const g=groups[k],c=document.createElement("div");c.className="card";
     c.onclick=()=>{PATH.push(k);$("q").value="";render();};
-    const ic=["👥","👤","📍"][PATH.length];
-    c.innerHTML=`<div class="t">${ic} ${esc(k)}</div><div class="s">${g.n} ménages · ${g.r} rejets</div>`;
+    c.innerHTML=`<div class="ic">${ic}</div><div class="t">${esc(k)}</div><div class="s">${g.n} ménages · ${g.r} rejets</div>`;
     L.appendChild(c);
   });
 }
 function go(n){PATH=PATH.slice(0,n);$("q").value="";render();}
+
+async function preview(path,ik,cm){
+  const url=`rapports/${DATE}/${encodeURI(path)}`;
+  $("mtitle").textContent=cm||ik;
+  $("msub").textContent=ik;
+  $("mdl").href=url;
+  const host=$("docx");host.innerHTML='<div class="loading"><div class="spin"></div><div>Chargement de l’aperçu…</div></div>';
+  $("modal").classList.add("show");document.body.style.overflow="hidden";
+  try{
+    const blob=await (await fetch(url)).blob();
+    host.innerHTML="";
+    await docx.renderAsync(blob,host,null,{className:"docx",inWrapper:true,ignoreHeight:true});
+  }catch(e){
+    host.innerHTML=`<div class="loading">Aperçu indisponible.<br><a class="btn sm" href="${url}" download>⬇ Télécharger le fichier</a></div>`;
+  }
+}
+function closeModal(){$("modal").classList.remove("show");document.body.style.overflow="";$("docx").innerHTML="";}
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
+
 async function zipScope(){
   const q=$("q").value.trim().toLowerCase();
   let rows=scope();
   if(q) rows=rows.filter(x=>x.interview_key.toLowerCase().includes(q)||(x.cm||"").toLowerCase().includes(q));
   if(!rows.length){alert("Aucun fichier à télécharger.");return;}
   if(rows.length>250 && !confirm(rows.length+" fichiers — le zip peut être volumineux. Continuer ?"))return;
+  const btn=$("zipbtn");const old=btn.textContent;btn.textContent="⏳ Préparation…";btn.disabled=true;
   const zip=new JSZip();
-  for(const x of rows){
-    try{const b=await (await fetch(`rapports/${DATE}/${encodeURI(x.path)}`)).blob();zip.file(x.path,b);}catch(e){}
-  }
+  for(const x of rows){try{const b=await (await fetch(`rapports/${DATE}/${encodeURI(x.path)}`)).blob();zip.file(x.path,b);}catch(e){}}
   const blob=await zip.generateAsync({type:"blob"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   a.download=`rapports_${DATE}_${PATH.join("_")||"tous"}.zip`;a.click();
+  btn.textContent=old;btn.disabled=false;
 }
 init();
 </script>
