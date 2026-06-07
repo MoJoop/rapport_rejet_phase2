@@ -95,7 +95,7 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
 <header>
   <div class="hwrap">
     <div class="logo">CQ</div>
-    <div class="brand"><h1>Rapports de rejets — EHCVM3</h1><p>ANSD · Contrôle qualité ménage</p></div>
+    <div class="brand"><h1>Rapports de rejets — EHCVM3</h1><p id="brandsub">ANSD · Contrôle qualité ménage</p></div>
     <div class="spacer"></div>
     <div class="snap"><label>Snapshot</label><select id="snap"></select>
       <a id="hebdo" class="btn sm" style="display:none" download>📄 Rapport hebdomadaire</a>
@@ -130,11 +130,18 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
 
 <script>
 let MENAGES=[], PATH=[], DATE="", SNAPS=[];
+// Mode équipe : ?team=EQxx → vue verrouillée sur une équipe (sans rapport hebdo).
+// Sans paramètre = vue QG complète.
+const TEAM=new URLSearchParams(location.search).get('team');
+const KEYS=TEAM?['enqueteur','dr']:['team','enqueteur','dr'];
+const LABELS=TEAM?['Enquêteurs','DR','Ménages']:['Équipes','Enquêteurs','DR','Ménages'];
+const ICONS=TEAM?['👤','📍']:['👥','👤','📍'];
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const fmtPhone=t=>{t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;};
 
 async function init(){
+  if(TEAM){ $("brandsub").textContent="Équipe "+TEAM+" · espace dédié"; document.title="Rejets — "+TEAM; }
   const m=await (await fetch("manifest.json?_="+Date.now())).json();
   SNAPS=m.snapshots;
   $("foot").textContent="Plateforme générée le "+m.generated+" · "+m.snapshots.length+" snapshot(s) · données EHCVM3";
@@ -149,32 +156,32 @@ async function loadSnap(date){
   DATE=date;PATH=[];$("q").value="";
   const sn=SNAPS.find(s=>s.date===date);
   const hb=$("hebdo");
-  if(sn&&sn.hebdo){hb.href=sn.hebdo;hb.style.display="inline-flex";}else{hb.style.display="none";}
+  // Rapport hebdo : visible seulement en vue QG (jamais en mode équipe).
+  if(!TEAM&&sn&&sn.hebdo){hb.href=sn.hebdo;hb.style.display="inline-flex";}else{hb.style.display="none";}
   const d=await (await fetch(`rapports/${date}/_index.json?_=`+Date.now())).json();
-  MENAGES=d.menages;
+  MENAGES=TEAM?d.menages.filter(x=>x.team===TEAM):d.menages;
   let h=0,mm=0,l=0;MENAGES.forEach(x=>{h+=x.n_h;mm+=x.n_m;l+=x.n_l;});
-  const eq=new Set(MENAGES.map(x=>x.team)).size;
+  const grp=TEAM?new Set(MENAGES.map(x=>x.enqueteur)).size:new Set(MENAGES.map(x=>x.team)).size;
   $("kpis").innerHTML=`
     <div class="kpi accent"><div class="n">${MENAGES.length}</div><div class="lbl">Ménages</div></div>
-    <div class="kpi"><div class="n">${eq}</div><div class="lbl">Équipes</div></div>
+    <div class="kpi"><div class="n">${grp}</div><div class="lbl">${TEAM?'Enquêteurs':'Équipes'}</div></div>
     <div class="kpi"><div class="n" style="color:var(--h)">${h}</div><div class="lbl">Sévérité haute</div></div>
     <div class="kpi"><div class="n" style="color:var(--m)">${mm}</div><div class="lbl">Moyenne</div></div>
     <div class="kpi"><div class="n" style="color:var(--l)">${l}</div><div class="lbl">Faible</div></div>`;
   render();
 }
 function scope(){
-  return MENAGES.filter(x=>(PATH.length<1||x.team===PATH[0])&&(PATH.length<2||x.enqueteur===PATH[1])&&(PATH.length<3||x.dr===PATH[2]));
+  return MENAGES.filter(x=>PATH.every((p,i)=>x[KEYS[i]]===p));
 }
 function render(){
   const q=$("q").value.trim().toLowerCase();
   let rows=scope();
   if(q) rows=rows.filter(x=>x.interview_key.toLowerCase().includes(q)||(x.cm||"").toLowerCase().includes(q));
-  const levels=["Équipes","Enquêteurs","DR","Ménages"];
-  let cb=`<span class="c home" onclick="go(0)">🏠 ${DATE}</span>`;
+  let cb=`<span class="c home" onclick="go(0)">🏠 ${TEAM?TEAM+' · ':''}${DATE}</span>`;
   PATH.forEach((p,i)=>cb+=`<span class="sep">›</span><span class="c" onclick="go(${i+1})">${esc(p)}</span>`);
   $("crumb").innerHTML=cb;
-  $("hint").textContent=(q?"Résultats de recherche":(levels[PATH.length]||""))+` — ${rows.length} élément(s)`;
-  const showFiles=q||PATH.length>=3;
+  $("hint").textContent=(q?"Résultats de recherche":(LABELS[PATH.length]||""))+` — ${rows.length} élément(s)`;
+  const showFiles=q||PATH.length>=KEYS.length;
   $("zipbtn").style.display=rows.length?"inline-flex":"none";
   const L=$("list");L.innerHTML="";
   if(!rows.length){L.innerHTML='<div class="empty">Aucun élément.</div>';return;}
@@ -192,8 +199,8 @@ function render(){
     });
     return;
   }
-  const key=["team","enqueteur","dr"][PATH.length];
-  const ic=["👥","👤","📍"][PATH.length];
+  const key=KEYS[PATH.length];
+  const ic=ICONS[PATH.length];
   const groups={};
   rows.forEach(x=>{const k=x[key];(groups[k]=groups[k]||{n:0,r:0});groups[k].n++;groups[k].r+=x.n_total;});
   Object.keys(groups).sort().forEach(k=>{
