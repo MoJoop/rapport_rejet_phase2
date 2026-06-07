@@ -97,7 +97,9 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
     <div class="logo">CQ</div>
     <div class="brand"><h1>Rapports de rejets — EHCVM3</h1><p>ANSD · Contrôle qualité ménage</p></div>
     <div class="spacer"></div>
-    <div class="snap"><label>Snapshot</label><select id="snap"></select></div>
+    <div class="snap"><label>Snapshot</label><select id="snap"></select>
+      <a id="hebdo" class="btn sm" style="display:none" download>📄 Rapport hebdomadaire</a>
+    </div>
   </div>
 </header>
 <div class="wrap">
@@ -127,13 +129,14 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
 </div>
 
 <script>
-let MENAGES=[], PATH=[], DATE="";
+let MENAGES=[], PATH=[], DATE="", SNAPS=[];
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const fmtPhone=t=>{t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;};
 
 async function init(){
   const m=await (await fetch("manifest.json?_="+Date.now())).json();
+  SNAPS=m.snapshots;
   $("foot").textContent="Plateforme générée le "+m.generated+" · "+m.snapshots.length+" snapshot(s) · données EHCVM3";
   const sel=$("snap");
   m.snapshots.forEach(s=>{const o=document.createElement("option");o.value=s.date;o.textContent=s.date;sel.appendChild(o);});
@@ -144,6 +147,9 @@ async function init(){
 }
 async function loadSnap(date){
   DATE=date;PATH=[];$("q").value="";
+  const sn=SNAPS.find(s=>s.date===date);
+  const hb=$("hebdo");
+  if(sn&&sn.hebdo){hb.href=sn.hebdo;hb.style.display="inline-flex";}else{hb.style.display="none";}
   const d=await (await fetch(`rapports/${date}/_index.json?_=`+Date.now())).json();
   MENAGES=d.menages;
   let h=0,mm=0,l=0;MENAGES.forEach(x=>{h+=x.n_h;mm+=x.n_m;l+=x.n_l;});
