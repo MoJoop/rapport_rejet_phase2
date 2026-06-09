@@ -88,10 +88,36 @@ select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--a
 .spin{width:30px;height:30px;border:3px solid var(--accent-soft);border-top-color:var(--accent);border-radius:50%;animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
+/* Gate de connexion QG (côté client — filtre dissuasif, pas une sécurité forte) */
+.gate{position:fixed;inset:0;z-index:100;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:none;align-items:center;justify-content:center;padding:20px}
+.gate.show{display:flex}
+.gate .card2{background:var(--surface);border-radius:16px;padding:30px 28px;width:min(380px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.gate h2{margin:8px 0 4px;font-size:18px}
+.gate p{margin:0 0 16px;color:var(--muted);font-size:13px}
+.gate label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.gate input{width:100%}
+.gate button{width:100%;margin-top:18px;background:var(--accent);color:#fff;border:none;border-radius:10px;
+  padding:11px;font-size:14px;font-weight:600;cursor:pointer}
+.gate button:hover{background:var(--accent-2)}
+.gate .err{color:var(--h);font-size:12.5px;margin-top:10px;display:none}
 @media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}.hwrap{flex-wrap:wrap}}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <form class="card2" onsubmit="return doLogin(event)">
+    <div class="logo">CQ</div>
+    <h2>Accès QG — EHCVM3</h2>
+    <p>Rapports de rejets &amp; rapport hebdomadaire. Accès réservé au QG.</p>
+    <label>Identifiant</label>
+    <input id="gu" autocomplete="username" autofocus/>
+    <label>Mot de passe</label>
+    <input id="gp" type="password" autocomplete="current-password"/>
+    <button type="submit">Se connecter</button>
+    <div class="err" id="gerr">Identifiant ou mot de passe incorrect.</div>
+  </form>
+</div>
 <header>
   <div class="hwrap">
     <div class="logo">CQ</div>
@@ -230,6 +256,19 @@ async function preview(path,ik,cm){
 function closeModal(){$("modal").classList.remove("show");document.body.style.overflow="";$("docx").innerHTML="";}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 
+// Gate QG : la vue complète (tous ménages + rapport hebdo) demande une connexion ;
+// les liens par équipe (?team=EQxx) restent ouverts pour les enquêteurs.
+const QG_USER="qg_ehcvm3", QG_PASS="Passer1234";
+function doLogin(e){
+  e.preventDefault();
+  if($("gu").value.trim()===QG_USER && $("gp").value===QG_PASS){
+    sessionStorage.setItem("qg_ok","1");
+    $("gate").classList.remove("show");
+    init();
+  }else{ $("gerr").style.display="block"; }
+  return false;
+}
+
 async function zipScope(){
   const q=$("q").value.trim().toLowerCase();
   let rows=scope();
@@ -244,7 +283,9 @@ async function zipScope(){
   a.download=`rapports_${DATE}_${PATH.join("_")||"tous"}.zip`;a.click();
   btn.textContent=old;btn.disabled=false;
 }
-init();
+// Démarrage : vue équipe ou session QG déjà validée → on charge ; sinon, gate.
+if(TEAM || sessionStorage.getItem("qg_ok")==="1"){ init(); }
+else{ $("gate").classList.add("show"); }
 </script>
 </body>
 </html>
