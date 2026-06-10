@@ -108,13 +108,14 @@ footer{text-align:center;color:var(--faint);font-size:12px;padding:24px}
 <div class="gate" id="gate">
   <form class="card2" onsubmit="return doLogin(event)">
     <div class="logo">CQ</div>
-    <h2>Accès QG — EHCVM3</h2>
-    <p>Rapports de rejets &amp; rapport hebdomadaire. Accès réservé au QG.</p>
+    <h2>Rapport hebdomadaire</h2>
+    <p>Document réservé au QG. Connectez-vous pour le télécharger. (Les rapports de rejets restent en accès libre.)</p>
     <label>Identifiant</label>
     <input id="gu" autocomplete="username" autofocus/>
     <label>Mot de passe</label>
     <input id="gp" type="password" autocomplete="current-password"/>
-    <button type="submit">Se connecter</button>
+    <button type="submit">Se connecter &amp; télécharger</button>
+    <button type="button" class="btn ghost sm" style="width:100%;margin-top:8px;color:var(--muted);border:none" onclick="$('gate').classList.remove('show')">Annuler</button>
     <div class="err" id="gerr">Identifiant ou mot de passe incorrect.</div>
   </form>
 </div>
@@ -256,15 +257,18 @@ async function preview(path,ik,cm){
 function closeModal(){$("modal").classList.remove("show");document.body.style.overflow="";$("docx").innerHTML="";}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal();});
 
-// Gate QG : la vue complète (tous ménages + rapport hebdo) demande une connexion ;
-// les liens par équipe (?team=EQxx) restent ouverts pour les enquêteurs.
+// Login UNIQUEMENT pour le rapport hebdomadaire : la plateforme (navigation +
+// rapports de rejets ménage) reste en accès libre. Le bouton « Rapport hebdomadaire »
+// déclenche le gate ; une fois validé (session), le téléchargement se lance.
 const QG_USER="qg_ehcvm3", QG_PASS="Passer1234";
+let PENDING_HEBDO=null;
 function doLogin(e){
   e.preventDefault();
   if($("gu").value.trim()===QG_USER && $("gp").value===QG_PASS){
     sessionStorage.setItem("qg_ok","1");
     $("gate").classList.remove("show");
-    init();
+    $("gerr").style.display="none";
+    if(PENDING_HEBDO){ window.open(PENDING_HEBDO,"_blank"); PENDING_HEBDO=null; }
   }else{ $("gerr").style.display="block"; }
   return false;
 }
@@ -283,9 +287,17 @@ async function zipScope(){
   a.download=`rapports_${DATE}_${PATH.join("_")||"tous"}.zip`;a.click();
   btn.textContent=old;btn.disabled=false;
 }
-// Démarrage : vue équipe ou session QG déjà validée → on charge ; sinon, gate.
-if(TEAM || sessionStorage.getItem("qg_ok")==="1"){ init(); }
-else{ $("gate").classList.add("show"); }
+// Le bouton « Rapport hebdomadaire » : si déjà connecté → téléchargement direct ;
+// sinon on intercepte le clic pour demander la connexion.
+$("hebdo").addEventListener("click", function(e){
+  if(sessionStorage.getItem("qg_ok")==="1") return;   // déjà authentifié → laisse le download
+  e.preventDefault();
+  PENDING_HEBDO=this.href;
+  $("gerr").style.display="none"; $("gu").value=""; $("gp").value="";
+  $("gate").classList.add("show"); $("gu").focus();
+});
+// La plateforme est en accès libre : on charge toujours.
+init();
 </script>
 </body>
 </html>
