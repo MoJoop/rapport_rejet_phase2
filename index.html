@@ -160,9 +160,10 @@ let MENAGES=[], PATH=[], DATE="", SNAPS=[];
 // Mode équipe : ?team=EQxx → vue verrouillée sur une équipe (sans rapport hebdo).
 // Sans paramètre = vue QG complète.
 const TEAM=new URLSearchParams(location.search).get('team');
-const KEYS=TEAM?['enqueteur','dr']:['team','enqueteur','dr'];
-const LABELS=TEAM?['Enquêteurs','DR','Ménages']:['Équipes','Enquêteurs','DR','Ménages'];
-const ICONS=TEAM?['👤','📍']:['👥','👤','📍'];
+// Navigation : Équipe → DR → Ménage (pas de niveau enquêteur/responsable).
+const KEYS=TEAM?['dr']:['team','dr'];
+const LABELS=TEAM?['DR','Ménages']:['Équipes','DR','Ménages'];
+const ICONS=TEAM?['📍']:['👥','📍'];
 const $=id=>document.getElementById(id);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const fmtPhone=t=>{t=(t||"").replace(/\D/g,"");return t.length===9?`${t.slice(0,2)} ${t.slice(2,5)} ${t.slice(5,7)} ${t.slice(7)}`:t;};
@@ -188,10 +189,10 @@ async function loadSnap(date){
   const d=await (await fetch(`rapports/${date}/_index.json?_=`+Date.now())).json();
   MENAGES=TEAM?d.menages.filter(x=>x.team===TEAM):d.menages;
   let h=0,mm=0,l=0;MENAGES.forEach(x=>{h+=x.n_h;mm+=x.n_m;l+=x.n_l;});
-  const grp=TEAM?new Set(MENAGES.map(x=>x.enqueteur)).size:new Set(MENAGES.map(x=>x.team)).size;
+  const grp=TEAM?new Set(MENAGES.map(x=>x.dr)).size:new Set(MENAGES.map(x=>x.team)).size;
   $("kpis").innerHTML=`
     <div class="kpi accent"><div class="n">${MENAGES.length}</div><div class="lbl">Ménages</div></div>
-    <div class="kpi"><div class="n">${grp}</div><div class="lbl">${TEAM?'Enquêteurs':'Équipes'}</div></div>
+    <div class="kpi"><div class="n">${grp}</div><div class="lbl">${TEAM?'DR':'Équipes'}</div></div>
     <div class="kpi"><div class="n" style="color:var(--h)">${h}</div><div class="lbl">Sévérité haute</div></div>
     <div class="kpi"><div class="n" style="color:var(--m)">${mm}</div><div class="lbl">Moyenne</div></div>
     <div class="kpi"><div class="n" style="color:var(--l)">${l}</div><div class="lbl">Faible</div></div>`;
