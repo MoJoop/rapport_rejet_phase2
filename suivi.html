@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>EHCVM3 — Suivi interactif</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root{--bg:#f5f6f8;--surface:#fff;--ink:#1f2937;--muted:#6b7280;--faint:#9ca3af;--line:#e8eaed;
+  --accent:#4f46e5;--accent-2:#6366f1;--accent-soft:#eef2ff;--radius:14px;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);--alert:#b91c1c;}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Inter,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1240px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:var(--shadow)}
+.brand h1{margin:0;font-size:16px;font-weight:700}.brand p{margin:0;font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+select,input{font-family:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 10px;outline:none}
+select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.btn{font-size:13px;font-weight:500;border-radius:9px;padding:7px 12px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#fff;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.ghost{background:var(--surface);color:var(--accent)}
+.wrap{max-width:1240px;margin:0 auto;padding:18px 22px 60px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);margin-bottom:16px}
+.fld{display:flex;flex-direction:column;gap:3px}.fld label{font-size:11px;color:var(--muted);font-weight:600}
+.count{margin-left:auto;align-self:center;font-size:13px;color:var(--muted);font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow)}
+.kpi .n{font-size:21px;font-weight:700}.kpi.accent .n{color:var(--accent)}
+.kpi .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+.tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{padding:8px 14px;border:none;background:transparent;cursor:pointer;font-size:13px;color:var(--muted);border-bottom:3px solid transparent;font-weight:600}
+.tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+.pane{display:none}.pane.active{display:block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px;font-size:14px;font-weight:600}
+.chart{width:100%;height:340px}.chart.tall{height:460px}
+.hint{color:var(--muted);font-size:12.5px;margin:2px 2px 12px;line-height:1.5}
+.tablewrap{overflow-x:auto;max-height:560px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:#f8fafc;font-weight:600;cursor:pointer}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.alert td{background:#fff1f1;color:var(--alert)}
+@media(max-width:820px){.kpis{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="logo">CQ</div>
+  <div class="brand"><h1>Suivi interactif — EHCVM3</h1><p>ANSD · Volet ménage · Phase 2</p></div>
+  <div class="spacer"></div>
+  <div class="fld"><label>Snapshot</label><select id="snap"></select></div>
+  <a class="btn ghost" href="index.html">← Rapports de rejets</a>
+</div></header>
+
+<div class="wrap">
+  <div class="filters">
+    <div class="fld"><label>Région</label><select id="f_rg"></select></div>
+    <div class="fld"><label>Département</label><select id="f_dp"></select></div>
+    <div class="fld"><label>Équipe</label><select id="f_eq"></select></div>
+    <div class="fld"><label>Agent</label><select id="f_ag"></select></div>
+    <div class="fld"><label>Grouper par</label><select id="f_grp">
+      <option value="eq">Équipe</option><option value="ag">Agent</option>
+      <option value="rgn">Région</option><option value="dpn">Département</option></select></div>
+    <button class="btn ghost" id="reset">Réinitialiser</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="collecte" class="active">Suivi collecte</button>
+    <button data-tab="qualite">Qualité des données</button>
+    <button data-tab="duree">Durée d'interview</button>
+  </nav>
+
+  <div class="pane active" id="tab-collecte">
+    <div class="card"><h3>DR entamés par équipe</h3>
+      <p class="hint">DR canonique (zéros de tête fusionnés), comptés seulement s'ils sont
+        cohérents avec la région de l'équipe. « Non rattachés » = ménages hors région ou code DR corrompu.</p>
+      <div class="tablewrap"><table id="t_dr"></table></div></div>
+    <div class="card"><h3>Ménages entamés par équipe (refus isolés)</h3>
+      <div class="tablewrap"><table id="t_men"></table></div></div>
+    <div class="card"><h3>Rythme — ménages clôturés par jour</h3><div class="chart" id="c_rythme"></div></div>
+  </div>
+
+  <div class="pane" id="tab-qualite">
+    <div class="card"><h3>Indicateurs de qualité par <span id="lbl_grp1">équipe</span></h3>
+      <div class="tablewrap"><table id="t_qual"></table></div></div>
+    <div class="card"><h3>Pyramide des âges (% de la population filtrée)</h3><div class="chart tall" id="c_pyr"></div></div>
+  </div>
+
+  <div class="pane" id="tab-duree">
+    <div class="card"><h3>Taille moyenne du ménage et durée médiane par <span id="lbl_grp2">équipe</span></h3>
+      <div class="tablewrap"><table id="t_duree"></table></div></div>
+    <div class="card"><h3>Durée d'interview × taille du ménage (chaque point = un ménage, couleur = agent)</h3>
+      <p class="hint">Les ménages nombreux bouclés en très peu de temps (bas-droite) sont à contrôler.</p>
+      <div class="chart tall" id="c_scatter"></div></div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let DATA={meta:{},menages:[],membres:[]}, SNAPS=[];
+const charts={};
+const PAL=['#4f46e5','#0b6e4f','#b45309','#be123c','#0891b2','#7c3aed','#65a30d','#c026d3','#475569','#ca8a04','#0e7490','#dc2626','#16a34a','#9333ea'];
+const ch=id=>{if(!charts[id])charts[id]=echarts.init($(id));return charts[id];};
+const med=a=>{if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;};
+const drAtt=eq=>eq==='EQ9'?11:10;
+const fmt=(v,d=0)=>v==null?'—':Number(v).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+// ---------- filtres ----------
+const FILT=['rg','dp','eq','ag'];
+function fv(id){const v=$('f_'+id).value;return v===''?null:v;}
+function cur(){return {rg:fv('rg'),dp:fv('dp'),eq:fv('eq'),ag:fv('ag'),grp:$('f_grp').value};}
+function match(x,f,ig){
+  if(f.rg&&ig!=='rg'&&String(x.rg)!==f.rg)return false;
+  if(f.dp&&ig!=='dp'&&String(x.dp)!==f.dp)return false;
+  if(f.eq&&ig!=='eq'&&x.eq!==f.eq)return false;
+  if(f.ag&&ig!=='ag'&&x.ag!==f.ag)return false;
+  return true;
+}
+function fillSel(id,opts,lab){
+  const el=$('f_'+id),c=el.value;
+  el.innerHTML=`<option value="">${lab}</option>`+opts.map(o=>`<option value="${o.v}">${o.t}</option>`).join('');
+  el.value=opts.some(o=>String(o.v)===c)?c:'';
+}
+function uniq(arr){return [...new Set(arr)].filter(v=>v!=null&&v!=='?'&&v!=='').sort();}
+function refreshFilters(){
+  const f=cur(), R=DATA.meta.regions||{};
+  const opt=(ig,m)=>uniq(DATA.menages.filter(x=>match(x,f,ig)).map(m));
+  fillSel('rg',opt('rg',x=>x.rg).map(v=>({v,t:R[v]||v})),'Toutes');
+  fillSel('dp',opt('dp',x=>x.dp).map(v=>({v,t:depName(v)})),'Tous');
+  fillSel('eq',opt('eq',x=>x.eq).map(v=>({v,t:v})),'Toutes');
+  fillSel('ag',opt('ag',x=>x.ag).map(v=>({v,t:v})),'Tous');
+}
+const _depCache={};
+function depName(code){if(_depCache[code])return _depCache[code];
+  const m=DATA.menages.find(x=>String(x.dp)===String(code));return _depCache[code]=(m?m.dpn:code);}
+function fMen(){const f=cur();return DATA.menages.filter(x=>match(x,f));}
+function fMem(){const f=cur();return DATA.membres.filter(x=>match(x,f));}
+function grpKey(){return cur().grp;}
+function grpLabel(x){const g=grpKey();if(g==='rgn')return (DATA.meta.regions||{})[x.rg]||'?';if(g==='dpn')return x.dpn||'?';return x[g]||'?';}
+
+// ---------- KPIs ----------
+function renderKPI(){
+  const M=fMen();
+  const coll=M.filter(x=>x.cl===1);
+  const dur=coll.map(x=>x.du).filter(v=>v!=null);
+  const drs=new Set(M.filter(x=>x.dr&&x.zone===1).map(x=>x.dr));
+  const k=[['Ménages',M.length,'accent'],['Clôturés',coll.length],['Refus',M.reduce((s,x)=>s+x.rf,0)],
+    ['Équipes',new Set(M.map(x=>x.eq)).size],['Agents',new Set(M.map(x=>x.ag)).size],
+    ['Durée médiane',dur.length?fmt(med(dur),1)+' h':'—']];
+  $('kpis').innerHTML=k.map(([l,v,c])=>`<div class="kpi ${c||''}"><div class="n">${typeof v==='number'?fmt(v):v}</div><div class="lbl">${l}</div></div>`).join('');
+  $('count').textContent=M.length+' ménages filtrés';
+}
+
+// ---------- tables ----------
+function tableHTML(headers,rows){
+  return `<thead><tr>${headers.map(h=>`<th class="${h.num?'num':''}">${h.t}</th>`).join('')}</tr></thead>`+
+    `<tbody>${rows.map(r=>`<tr class="${r._alert?'alert':''}">${r.cells.map((c,i)=>`<td class="${headers[i].num?'num':''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+}
+function groupBy(arr,keyfn){const g={};arr.forEach(x=>{const k=keyfn(x);(g[k]=g[k]||[]).push(x);});return g;}
+
+function renderCollecte(){
+  const M=fMen(), byEq=groupBy(M,x=>x.eq);
+  // T1 DR
+  let rows=Object.entries(byEq).map(([eq,xs])=>{
+    const dr=new Set(xs.filter(x=>x.dr&&x.zone===1).map(x=>x.dr)).size;
+    const non=xs.filter(x=>x.zone===0||(x.dr===''&&x.zone===1)).length;
+    const att=drAtt(eq);
+    return {eq,dr,non,att,prog:att?100*dr/att:0};
+  }).sort((a,b)=>b.dr-a.dr);
+  $('t_dr').innerHTML=tableHTML(
+    [{t:'Équipe'},{t:'DR attendus',num:1},{t:'DR entamés',num:1},{t:'Non rattachés',num:1},{t:'Progression %',num:1}],
+    rows.map(r=>({cells:[lblEq(r.eq),r.att,r.dr,r.non,fmt(r.prog,1)]})));
+  // T2 ménages
+  let r2=Object.entries(byEq).map(([eq,xs])=>{
+    const att=drAtt(eq)*12, cl=xs.filter(x=>x.cl===1).length, rf=xs.reduce((s,x)=>s+x.rf,0);
+    return {eq,ent:xs.length,rf,cl,att,prog:att?100*cl/att:0};
+  }).sort((a,b)=>b.prog-a.prog);
+  $('t_men').innerHTML=tableHTML(
+    [{t:'Équipe'},{t:'Entamés',num:1},{t:'Dont refus',num:1},{t:'Clôturés',num:1},{t:'Attendus',num:1},{t:'Progression %',num:1}],
+    r2.map(r=>({cells:[lblEq(r.eq),r.ent,r.rf,r.cl,r.att,fmt(r.prog,1)]})));
+  // rythme
+  const coll=M.filter(x=>x.cl===1&&x.df);
+  const perj={};coll.forEach(x=>perj[x.df]=(perj[x.df]||0)+1);
+  const j=Object.keys(perj).sort();
+  ch('c_rythme').setOption({tooltip:{trigger:'axis'},grid:{left:45,right:15,top:20,bottom:55},
+    xAxis:{type:'category',data:j,axisLabel:{rotate:45,fontSize:10}},yAxis:{type:'value'},
+    series:[{type:'bar',data:j.map(d=>perj[d]),itemStyle:{color:'#4f46e5'}}]},true);
+}
+const _nomEq={};
+function lblEq(eq){return eq;}
+
+function renderQualite(){
+  const M=fMen(), B=fMem(), g=grpKey();
+  $('lbl_grp1').textContent={eq:'équipe',ag:'agent',rgn:'région',dpn:'département'}[g];
+  // group membres + menages by grpLabel
+  const keyM=x=>grpLabel(x);
+  const gm=groupBy(B,keyM), gmen=groupBy(M,keyM);
+  const keys=uniq(Object.keys(gm));
+  const rows=keys.map(k=>{
+    const mem=gm[k]||[], men=gmen[k]||[];
+    const tot=mem.length, vis=mem.filter(x=>x.vis===1).length;
+    const nm=new Set(men.map(x=>x.k)).size;
+    const sx=mem.filter(x=>x.sx===1||x.sx===2), h=sx.filter(x=>x.sx===1).length, fcnt=sx.length-h;
+    const cm=mem.filter(x=>x.cm===1), cmh=cm.filter(x=>x.sx===1).length, cmt=cm.filter(x=>x.sx===1||x.sx===2).length;
+    return {k,tot,vis,taille:nm?mem.length/nm:null,
+      ph:sx.length?100*h/sx.length:null,pf:sx.length?100*fcnt/sx.length:null,
+      cmh:cmt?100*cmh/cmt:null,cmf:cmt?100*(cmt-cmh)/cmt:null};
+  }).sort((a,b)=>a.k.localeCompare(b.k));
+  $('t_qual').innerHTML=tableHTML(
+    [{t:g==='ag'?'Agent':(g==='rgn'?'Région':(g==='dpn'?'Département':'Équipe'))},
+     {t:'Membres',num:1},{t:'Visiteurs',num:1},{t:'% visit.',num:1},{t:'Taille moy.',num:1},
+     {t:'% H',num:1},{t:'% F',num:1},{t:'CM %H',num:1},{t:'CM %F',num:1}],
+    rows.map(r=>({cells:[r.k,r.tot,r.vis,fmt(r.tot?100*r.vis/r.tot:null,1),fmt(r.taille,2),
+      fmt(r.ph,1),fmt(r.pf,1),fmt(r.cmh,1),fmt(r.cmf,1)]})));
+  // pyramide
+  const br=[];for(let b=0;b<80;b+=5)br.push([b,b+4,`${b}-${b+4}`]);br.push([80,200,'80+']);
+  const tot=B.filter(x=>x.a!=null&&(x.sx===1||x.sx===2)).length||1;
+  const H=br.map(([lo,hi])=>-100*B.filter(x=>x.a!=null&&x.a>=lo&&x.a<hi&&x.sx===1).length/tot);
+  const F=br.map(([lo,hi])=>100*B.filter(x=>x.a!=null&&x.a>=lo&&x.a<hi&&x.sx===2).length/tot);
+  ch('c_pyr').setOption({tooltip:{trigger:'axis',formatter:p=>p.map(s=>`${s.seriesName}: ${Math.abs(s.value).toFixed(1)}%`).join('<br/>')},
+    legend:{top:0},grid:{left:55,right:25,top:30,bottom:30},
+    xAxis:{type:'value',axisLabel:{formatter:v=>Math.abs(v)+'%'}},
+    yAxis:{type:'category',data:br.map(b=>b[2])},
+    series:[{name:'Hommes',type:'bar',stack:'x',data:H,itemStyle:{color:'#4f46e5'}},
+            {name:'Femmes',type:'bar',stack:'x',data:F,itemStyle:{color:'#e0962a'}}]},true);
+}
+
+function renderDuree(){
+  const M=fMen(), g=grpKey();
+  $('lbl_grp2').textContent={eq:'équipe',ag:'agent',rgn:'région',dpn:'département'}[g];
+  const grp=groupBy(M,x=>grpLabel(x));
+  const rows=Object.entries(grp).map(([k,xs])=>{
+    const dur=xs.map(x=>x.du).filter(v=>v!=null);
+    const nm=new Set(xs.map(x=>x.k)).size, nmem=xs.reduce((s,x)=>s+x.ta,0);
+    return {k,taille:nm?nmem/nm:null,med:med(dur),n:dur.length};
+  }).filter(r=>r.med!=null).sort((a,b)=>b.med-a.med);
+  $('t_duree').innerHTML=tableHTML(
+    [{t:g==='ag'?'Agent':(g==='rgn'?'Région':(g==='dpn'?'Département':'Équipe'))},
+     {t:'Ménages',num:1},{t:'Taille moy.',num:1},{t:'Durée médiane (h)',num:1}],
+    rows.map(r=>({cells:[r.k,r.n,fmt(r.taille,1),fmt(r.med,1)]})));
+  // scatter durée × taille, couleur = agent
+  const coll=M.filter(x=>x.du!=null&&x.ta>0);
+  const ags=uniq(coll.map(x=>x.ag));
+  const cmap={};ags.forEach((a,i)=>cmap[a]=PAL[i%PAL.length]);
+  const series=ags.map(a=>({name:a,type:'scatter',symbolSize:8,itemStyle:{color:cmap[a],opacity:.7},
+    data:coll.filter(x=>x.ag===a).map(x=>[x.ta,x.du,x.agn||a,x.dr,x.eq])}));
+  ch('c_scatter').setOption({tooltip:{trigger:'item',formatter:p=>`${p.data[4]} · ${p.data[2]}<br/>DR ${p.data[3]}<br/>Taille ${p.data[0]} · ${p.data[1]} h`},
+    legend:{type:'scroll',top:0},grid:{left:50,right:20,top:40,bottom:45},
+    xAxis:{type:'value',name:'Taille du ménage'},yAxis:{type:'value',name:'Durée (h)'},series},true);
+}
+
+// ---------- orchestration ----------
+function activeTab(){return document.querySelector('.tabs button.active').dataset.tab;}
+function renderActive(){
+  renderKPI();
+  const t=activeTab();
+  if(t==='collecte')renderCollecte();
+  else if(t==='qualite')renderQualite();
+  else if(t==='duree')renderDuree();
+}
+function onChange(){refreshFilters();renderActive();}
+
+async function loadSnap(date){
+  DATA=await(await fetch(`rapports/${date}/suivi.json?_=`+Date.now())).json();
+  refreshFilters();renderActive();
+}
+async function init(){
+  let snaps=[];
+  try{const m=await(await fetch('manifest.json?_='+Date.now())).json();snaps=(m.snapshots||[]).filter(s=>s.suivi);}catch(e){}
+  SNAPS=snaps;
+  const sel=$('snap');
+  if(!snaps.length){document.querySelector('.wrap').innerHTML='<p class="hint">Aucun snapshot de suivi disponible.</p>';return;}
+  sel.innerHTML=snaps.map(s=>`<option value="${s.date}">${s.date}</option>`).join('');
+  sel.onchange=()=>loadSnap(sel.value);
+  FILT.forEach(k=>$('f_'+k).addEventListener('change',onChange));
+  $('f_grp').addEventListener('change',renderActive);
+  $('reset').addEventListener('click',()=>{FILT.forEach(k=>$('f_'+k).value='');onChange();});
+  document.querySelectorAll('.tabs button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');$('tab-'+b.dataset.tab).classList.add('active');renderActive();
+  }));
+  window.addEventListener('resize',()=>Object.values(charts).forEach(c=>c.resize()));
+  await loadSnap(snaps[0].date);
+}
+init();
+</script>
+</body>
+</html>
