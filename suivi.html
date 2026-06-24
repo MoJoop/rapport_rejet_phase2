@@ -79,8 +79,9 @@ tr.alert td{background:#fff1f1;color:var(--alert)}
 
   <div class="pane active" id="tab-collecte">
     <div class="card"><h3>DR entamés par équipe</h3>
-      <p class="hint">DR canonique (zéros de tête fusionnés), comptés seulement s'ils sont
-        cohérents avec la région de l'équipe. « Non rattachés » = ménages hors région ou code DR corrompu.</p>
+      <p class="hint">DR entamés = arrondi supérieur de (ménages ÷ 12), un DR contenant 12 ménages
+        (cohérent avec le tableau des ménages). Le code DR s00q06 brut est trop bruité/sur-collecté
+        pour un décompte direct fiable.</p>
       <div class="tablewrap"><table id="t_dr"></table></div></div>
     <div class="card"><h3>Ménages entamés par équipe (refus isolés)</h3>
       <div class="tablewrap"><table id="t_men"></table></div></div>
@@ -150,7 +151,6 @@ function renderKPI(){
   const M=fMen();
   const coll=M.filter(x=>x.cl===1);
   const dur=coll.map(x=>x.du).filter(v=>v!=null);
-  const drs=new Set(M.filter(x=>x.dr&&x.zone===1).map(x=>x.dr));
   const k=[['Ménages',M.length,'accent'],['Clôturés',coll.length],['Refus',M.reduce((s,x)=>s+x.rf,0)],
     ['Équipes',new Set(M.map(x=>x.eq)).size],['Agents',new Set(M.map(x=>x.ag)).size],
     ['Durée médiane',dur.length?fmt(med(dur),1)+' h':'—']];
@@ -167,16 +167,16 @@ function groupBy(arr,keyfn){const g={};arr.forEach(x=>{const k=keyfn(x);(g[k]=g[
 
 function renderCollecte(){
   const M=fMen(), byEq=groupBy(M,x=>x.eq);
-  // T1 DR
+  // T1 DR — dérivé du nb de ménages : DR entamés = ceil(ménages / 12) (cohérence Tab 2)
   let rows=Object.entries(byEq).map(([eq,xs])=>{
-    const dr=new Set(xs.filter(x=>x.dr&&x.zone===1).map(x=>x.dr)).size;
-    const non=xs.filter(x=>x.zone===0||(x.dr===''&&x.zone===1)).length;
+    const nmen=new Set(xs.map(x=>x.k)).size;
+    const dr=Math.ceil(nmen/12);
     const att=drAtt(eq);
-    return {eq,dr,non,att,prog:att?100*dr/att:0};
+    return {eq,nmen,dr,att,prog:att?100*dr/att:0};
   }).sort((a,b)=>b.dr-a.dr);
   $('t_dr').innerHTML=tableHTML(
-    [{t:'Équipe'},{t:'DR attendus',num:1},{t:'DR entamés',num:1},{t:'Non rattachés',num:1},{t:'Progression %',num:1}],
-    rows.map(r=>({cells:[lblEq(r.eq),r.att,r.dr,r.non,fmt(r.prog,1)]})));
+    [{t:'Équipe'},{t:'Ménages',num:1},{t:'DR attendus',num:1},{t:'DR entamés',num:1},{t:'Progression %',num:1}],
+    rows.map(r=>({cells:[lblEq(r.eq),r.nmen,r.att,r.dr,fmt(r.prog,1)]})));
   // T2 ménages
   let r2=Object.entries(byEq).map(([eq,xs])=>{
     const att=drAtt(eq)*12, cl=xs.filter(x=>x.cl===1).length, rf=xs.reduce((s,x)=>s+x.rf,0);
