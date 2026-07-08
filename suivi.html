@@ -79,9 +79,9 @@ tr.alert td{background:#fff1f1;color:var(--alert)}
 
   <div class="pane active" id="tab-collecte">
     <div class="card"><h3>DR entamés par équipe</h3>
-      <p class="hint">DR entamés = arrondi supérieur de (ménages <b>valides</b> ÷ 12), un DR contenant
-        12 ménages (cohérent avec les ménages clôturés du tableau des ménages). Le code DR s00q06 brut
-        est trop bruité/sur-collecté pour un décompte direct fiable.</p>
+      <p class="hint">DR entamés = nombre de DR <b>distincts</b> portant au moins un ménage de l'équipe
+        (codes s00q06 corrompus réparés via le dénombrement) — mêmes comptes que le rapport hebdo
+        et que les dossiers DR des rapports rejets.</p>
       <div class="tablewrap"><table id="t_dr"></table></div></div>
     <div class="card"><h3>Ménages entamés par équipe (refus isolés)</h3>
       <div class="tablewrap"><table id="t_men"></table></div></div>
@@ -167,10 +167,11 @@ function groupBy(arr,keyfn){const g={};arr.forEach(x=>{const k=keyfn(x);(g[k]=g[
 
 function renderCollecte(){
   const M=fMen(), byEq=groupBy(M,x=>x.eq);
-  // T1 DR — DR entamés = ceil(ménages VALIDES / 12) (cohérence Tab 2, ménages clôturés)
+  // T1 DR — DR entamés = comptage DIRECT des DR distincts (codes réparés via
+  // dénombrement) : mêmes comptes que le hebdo Word et les dossiers DR des rapports rejets.
   let rows=Object.entries(byEq).map(([eq,xs])=>{
     const nmen=xs.filter(x=>x.cl===1).length;   // ménages valides (clôturés)
-    const dr=Math.ceil(nmen/12);
+    const dr=new Set(xs.map(x=>x.dr).filter(Boolean)).size;
     const att=drAtt(eq);
     return {eq,nmen,dr,att,prog:att?100*dr/att:0};
   }).sort((a,b)=>b.dr-a.dr);
