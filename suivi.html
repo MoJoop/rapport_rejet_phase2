@@ -78,10 +78,10 @@ tr.alert td{background:#fff1f1;color:var(--alert)}
   </nav>
 
   <div class="pane active" id="tab-collecte">
-    <div class="card"><h3>DR entamés par équipe</h3>
-      <p class="hint">DR entamés = nombre de DR <b>distincts</b> portant au moins un ménage de l'équipe
-        (codes s00q06 corrompus réparés via le dénombrement) — mêmes comptes que le rapport hebdo
-        et que les dossiers DR des rapports rejets.</p>
+    <div class="card"><h3>DR clôturés par équipe</h3>
+      <p class="hint">DR clôturé = DR portant au moins <b>12 ménages collectés</b> (la charge d'un DR
+        étant 12 ménages ; codes s00q06 corrompus réparés via le dénombrement) — mêmes comptes que
+        le rapport hebdo.</p>
       <div class="tablewrap"><table id="t_dr"></table></div></div>
     <div class="card"><h3>Ménages entamés par équipe (refus isolés)</h3>
       <div class="tablewrap"><table id="t_men"></table></div></div>
@@ -167,16 +167,18 @@ function groupBy(arr,keyfn){const g={};arr.forEach(x=>{const k=keyfn(x);(g[k]=g[
 
 function renderCollecte(){
   const M=fMen(), byEq=groupBy(M,x=>x.eq);
-  // T1 DR — DR entamés = comptage DIRECT des DR distincts (codes réparés via
-  // dénombrement) : mêmes comptes que le hebdo Word et les dossiers DR des rapports rejets.
+  // T1 DR — DR CLÔTURÉS = DR portant ≥ 12 ménages collectés (charge d'un DR),
+  // codes réparés via dénombrement : mêmes comptes que le rapport hebdo Word.
   let rows=Object.entries(byEq).map(([eq,xs])=>{
     const nmen=xs.filter(x=>x.cl===1).length;   // ménages valides (clôturés)
-    const dr=new Set(xs.map(x=>x.dr).filter(Boolean)).size;
+    const parDr={};
+    xs.forEach(x=>{if(x.dr)parDr[x.dr]=(parDr[x.dr]||0)+1;});
+    const dr=Object.values(parDr).filter(n=>n>=12).length;
     const att=drAtt(eq);
     return {eq,nmen,dr,att,prog:att?100*dr/att:0};
   }).sort((a,b)=>b.dr-a.dr);
   $('t_dr').innerHTML=tableHTML(
-    [{t:'Équipe'},{t:'Ménages valides',num:1},{t:'DR attendus',num:1},{t:'DR entamés',num:1},{t:'Progression %',num:1}],
+    [{t:'Équipe'},{t:'Ménages valides',num:1},{t:'DR attendus',num:1},{t:'DR clôturés',num:1},{t:'Progression %',num:1}],
     rows.map(r=>({cells:[lblEq(r.eq),r.nmen,r.att,r.dr,fmt(r.prog,1)]})));
   // T2 ménages
   let r2=Object.entries(byEq).map(([eq,xs])=>{
