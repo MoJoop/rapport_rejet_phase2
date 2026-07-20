@@ -172,7 +172,7 @@ function renderCollecte(){
   let rows=Object.entries(byEq).map(([eq,xs])=>{
     const nmen=xs.filter(x=>x.cl===1).length;   // ménages valides (clôturés)
     const parDr={};
-    xs.forEach(x=>{if(x.dr)parDr[x.dr]=(parDr[x.dr]||0)+1;});
+    xs.forEach(x=>{if(x.dr && x.rf!==1)parDr[x.dr]=(parDr[x.dr]||0)+1;});  // hors refus (doublons déjà retirés)
     const dr=Object.values(parDr).filter(n=>n>=12).length;
     const att=drAtt(eq);
     return {eq,nmen,dr,att,prog:att?100*dr/att:0};
